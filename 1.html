@@ -1,0 +1,2130 @@
+<!-- 连接订单 详情弹框 -->
+<header>
+    <!-- css 引入 -->
+    <link rel="stylesheet" type="text/css" href="${base}/static/css/element-ui/el-upload.css">
+    <link rel="stylesheet" type="text/css" href="${base}/static/css/view/modules/business/general/order/primary/connective/indexDeail.css">
+    <link rel="stylesheet" href="http://cdn.static.runoob.com/libs/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="http://cdn.static.runoob.com/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="http://cdn.static.runoob.com/libs/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/@popperjs/core@^2.0.0"></script>
+</header>
+
+<%
+var title="连接产品页";
+layout("/layouts/blank.html",{title:title}){
+%>
+
+<section class="content connectiveIndexDetail" id="form" v-cloak>
+    <!--  商品信息  -->
+    <div class="main-title">物联网连接产品</div>
+    <div v-for="goods in goodsVoList">
+        <!-- 商品名称 | 业务号码 | 集团用户名称 -->
+        <div class="commodity-info">
+            <div>商品名称：{{goods.goodsName}}</div>
+            <div>业务号码：{{goods.serialNumber}}</div>
+            <div>集团用户名称：{{goods.custNameChinese}}</div>
+        </div>
+
+        <!-- 政企订单号 | 物联网订单号 -->
+        <div>
+            <div class="container-level-1">
+                <div class="color-block"></div>
+                <div class="title-level-1">订单信息</div>
+            </div>
+            <div class="item-line">
+                <div>政企订单号：{{orderInfo.subscribeId}}</div>
+                <div>物联网订单号：{{orderInfo.orderId}}</div>
+            </div>
+        </div>
+        <div>
+            <div class="container-level-1">
+                <div class="color-block"></div>
+                <div class="title-level-1">业务信息</div>
+            </div>
+            <div class="container-block">
+                <div class="container-level-2">
+                    <div class="color-block"></div>
+                    <div class="title-level-2">物联网{{goods.goodsName}}</div>
+                </div>
+                <div>
+                    <div class="item-line">
+                        <div>业务场景：{{getValue(goods, 'business_scene')}}</div>
+                        <div>
+                            使用场景：{{getValue(goods, 'first_industry_code')}}/{{getValue(goods, 'second_industry_code')}}/{{getValue(goods, 'third_industry_code')}}
+                        </div>
+                        <div>承载平台：{{getValue(goods, 'platform')}}</div>
+                        <div>企业自采：{{getValue(goods, 'self_acquisition')}}</div>
+                    </div>
+                    <div class="item-line">
+                        <div>合同约定开卡总量(张)：{{getValue(goods, 'contract_quantity')}}</div>
+                        <div>SIM卡类型：{{getValue(goods, 'sim_card_type')}}</div>
+                        <div>卡号数据服务费：{{getValue(goods, 'sim_data_fee')}}</div>
+                        <div>订购数量：{{getValue(goods, 'order_quantity')}}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="container-block">
+                <div class="container-level-2">
+                    <div class="color-block"></div>
+                    <div class="title-level-2">物流信息</div>
+                </div>
+                <div class="item-line">
+                    <div>企业收货人：{{getValue(goods, 'receiver_name')}}</div>
+                    <div>收货人电话：{{getValue(goods, 'receiver_phone')}}</div>
+                    <div>收货人身份证：{{getValue(goods, 'receiver_idcard')}}</div>
+                    <div>收货地址：{{getValue(goods, 'receipt_address')}}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- APN配置 展示内容 -->
+        <div v-if="APNConfig(goods) && APNConfig(goods).length>0">
+            <div class="commodity-info">
+                <div>商品名称：{{APNConfig(goods)[0].attrGrpName}}</div>
+            </div>
+            <div>
+                <div class="container-level-1">
+                    <div class="color-block"></div>
+                    <div class="title-level-1">业务信息</div>
+                </div>
+                <div class="container-block">
+                    <div class="container-level-2">
+                        <div class="color-block"></div>
+                        <div class="title-level-2">{{APNConfig(goods)[0].attrGrpName}}</div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <div class="table-structure table-structure-apn table-head">
+                        <div v-if="canEditAPN + '' === 'true'">操作</div>
+                        <div>APN标识</div>
+                        <div>APN类型</div>
+                        <div>是否固定IP</div>
+                    </div>
+                    <div class="table-structure table-structure-apn table-body" v-for="config in APNConfig(goods)">
+                        <div
+                            v-if="canEditAPN + '' === 'true'"
+                            class="click"
+                            type="button"
+                            data-toggle="modal"
+                            data-target="#APNModalEdit"
+                            @click="changeAPNConfig(config)"
+                        >
+                            编辑
+                        </div>
+                        <div class="click" type="button" data-toggle="modal" data-target="#APNModal" @click="changeAPNConfig(config)">
+                            {{getAttrValue(config.attrVoList, 'related_apn')}}
+                        </div>
+                        <div>{{getAttrValue(config.attrVoList, 'apn_type')}}</div>
+                        <div>{{getAttrValue(config.attrVoList, 'enable_fixed_ip') || '-'}}</div>
+                    </div>
+                </div>
+                <!-- 编辑 -->
+                <div
+                    class="my-modal modal fade"
+                    id="APNModalEdit"
+                    tabindex="-1"
+                    role="dialog"
+                    aria-labelledby="APNModalLabel"
+                >
+                    <div class="modal-dialog" style="width: 850px">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                                <h4 class="modal-title" id="APNModalLabel">APN配置</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div>
+                                    <div class="options">
+                                        <div>
+                                            连接类型(测试用)：
+                                        </div>
+                                        <div class="label-container">
+                                            <div
+                                                :class="[
+                                                    'unable-choose-label',
+                                                    connection === connectionType
+                                                        ? 'selected'
+                                                        : 'only-read',
+                                                ]"
+                                                v-for="connection in connectionTypeList"
+                                                :key="connection"
+                                                @click="setData({ 'connectionType': connection })"
+                                            >
+                                                {{ connection }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="options">
+                                        <div>
+                                            新增APN方式：
+                                        </div>
+                                        <!--<div class="value-container">-->
+                                        <!--    {{ getAttrValue(activeAPNConfig.attrVoList, 'apn_add_method') }}-->
+                                        <!--</div>-->
+                                        <div class="label-container">
+                                            <div
+                                                :class="[
+                                                    'unable-choose-label',
+                                                    addWay === getAttrValue(activeAPNConfig.attrVoList, 'apn_add_method')
+                                                        ? 'selected'
+                                                        : 'only-read',
+                                                ]"
+                                                v-for="addWay in apnAddWayList"
+                                                :key="addWay"
+                                                @click="setApnAttrValue('apn_add_method', addWay)"
+                                            >
+                                                {{ addWay }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- TAB1 - 使用共享APN -->
+                                    <div
+                                        class="options"
+                                        v-if="getAttrValue(activeAPNConfig.attrVoList, 'apn_add_method') === APN_ADD_METHOD_SHARED"
+                                    >
+                                        <div>共享APN域名：</div>
+                                        <!--<div class="value-container">-->
+                                        <!--    {{ getCustomization('share_apn_domain') }}-->
+                                        <!--</div>-->
+                                        <div
+                                            :class="[
+                                                'unable-choose-label',
+                                                domain === customization.currentDomain ? 'selected' : 'only-read',
+                                            ]"
+                                            v-for="domain in apnDomainList"
+                                            :key="domain"
+                                            @click="setCustomizationValue('currentDomain', domain)"
+                                        >
+                                            {{ domain }}
+                                        </div>
+                                    </div>
+                                    <!-- TAB2 - 使用已创建APN -->
+                                    <div
+                                        class="options"
+                                        v-else-if="getAttrValue(activeAPNConfig.attrVoList, 'apn_add_method') === APN_ADD_METHOD_CREATED"
+                                    >
+                                        <div>复用APN域名：</div>
+                                        <div class="value-container">
+                                            {{ customization.reuseAPNDomain }}
+                                        </div>
+                                    </div>
+                                    <!-- TAB3 - 我要定制 -->
+                                    <div v-else-if="getAttrValue(activeAPNConfig.attrVoList, 'apn_add_method') === APN_ADD_METHOD_CUSTOM">
+                                        <!-- APN类型 -->
+                                        <div class="options">
+                                            <div>
+                                                <span style="color: red">*</span>
+                                                <span>APN类型：</span>
+                                            </div>
+                                            <!--<div class="value-container">-->
+                                            <!--    {{ customization.APNType }}-->
+                                            <!--</div>-->
+                                            <div
+                                                :class="[
+                                                    'unable-choose-label',
+                                                    type === customization.APNType ? 'selected' : 'only-read',
+                                                ]"
+                                                v-for="type in apnTypeList"
+                                                :key="type"
+                                                @click="setCustomizationValue('APNType', type)"
+                                            >
+                                                {{ type }}
+                                            </div>
+                                        </div>
+                                        <!-- 细分业务类型 -->
+                                        <div class="options">
+                                            <div>
+                                                <span style="color: red">*</span>
+                                                <span>细分业务类型：</span>
+                                            </div>
+                                            <!--<div class="value-container">-->
+                                            <!--    {{ customization.businessType }}-->
+                                            <!--</div>-->
+                                            <div
+                                                :class="[
+                                                    'unable-choose-label',
+                                                    businessType === customization.businessType ? 'selected' : 'only-read',
+                                                ]"
+                                                v-for="businessType in apnBusinessTypeList"
+                                                :key="businessType"
+                                                @click="setCustomizationValue('businessType', businessType)"
+                                            >
+                                                {{ businessType }}
+                                            </div>
+                                        </div>
+                                        <!-- 操作类型 -->
+                                        <div class="options">
+                                            <div class="flex-option option-item">
+                                                <div>操作类型：</div>
+                                                <div class="value-container">
+                                                    新装
+                                                </div>
+                                            </div>
+                                            <div class="flex-option option-item">
+                                                <div>APN名称：</div>
+                                                <label class="input-container">
+                                                    <input
+                                                        class="option-input"
+                                                        placeholder="请输入内容"
+                                                        v-model="customization.APNName"
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <!--customization.APNType ==='互联网'!-->
+                                        <div v-if="customization.APNType === APN_TYPE_INTERNET">
+                                            <!-- Active Time(s) TAU(定时器) -->
+                                            <div v-if="!is345G()" class="options" style="display: flex; height: 70px">
+                                                <div class="flex-option option-item">
+                                                    <div>
+                                                        <span style="color: red">*</span>
+                                                        <span>Active Time(s)：</span>
+                                                    </div>
+                                                    <label class="textarea-style">
+                                                        <input
+                                                            class="option-input"
+                                                            placeholder="请输入内容"
+                                                            v-model="customization.activeTime"
+                                                        />
+                                                    </label>
+                                                </div>
+                                                <div class="flex-option option-item">
+                                                    <div class="item-title">
+                                                        <span style="color: red">*</span>
+                                                        <span>TAU(定时器)：</span>
+                                                    </div>
+                                                    <label class="textarea-style">
+                                                        <input
+                                                            class="option-input"
+                                                            placeholder="请输入内容"
+                                                            v-model="customization.tau"
+                                                        />
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <!-- eDRX寻呼周期 eDRX寻呼窗口 -->
+                                            <div v-if="!is345G()" class="flexible-module">
+                                                <div class="flex-option option-item" style="padding-bottom: 30px">
+                                                    <div class="item-title">
+                                                        <span style="color: red">*</span>
+                                                        <span>eDRX寻呼周期：</span>
+                                                    </div>
+                                                    <div class="label-container">
+                                                        <div
+                                                            :class="[
+                                                                'unable-choose-label',
+                                                                apnPagingCycle === customization.pagingCycle
+                                                                    ? 'selected'
+                                                                    : 'only-read',
+                                                            ]"
+                                                            v-for="apnPagingCycle in apnPagingCycleList"
+                                                            :key="apnPagingCycle"
+                                                            @click="setCustomizationValue('pagingCycle', apnPagingCycle)"
+                                                        >
+                                                            {{ apnPagingCycle }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-option option-item" style="padding-bottom: 30px">
+                                                    <div class="item-title">
+                                                        <span style="color: red">*</span>
+                                                        <span>eDRX寻呼窗口：</span>
+                                                    </div>
+                                                    <div class="label-container">
+                                                        <div
+                                                            :class="[
+                                                                'unable-choose-label',
+                                                                apnPagingWindow === customization.pagingWindow
+                                                                    ? 'selected'
+                                                                    : 'only-read',
+                                                            ]"
+                                                            v-for="apnPagingWindow in apnPagingWindowList"
+                                                            :key="apnPagingWindow"
+                                                            @click="setCustomizationValue('pagingWindow', apnPagingWindow)"
+                                                        >
+                                                            {{ apnPagingWindow }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- 速率 -->
+                                            <div v-if="is345G()" class="flex-option" style="padding-bottom: 30px">
+                                                <div class="dropdown dp-customize">
+                                                    <div style="width: 145px; line-height: 40px; color: #606266">
+                                                        <span style="color: red">*</span>
+                                                        <span>速率：</span>
+                                                    </div>
+                                                    <div class="bs-select btn-group">
+                                                      <button
+                                                          type="button"
+                                                          class="select-self btn btn-default dropdown-toggle"
+                                                          data-toggle="dropdown"
+                                                          aria-haspopup="true"
+                                                          aria-expanded="false"
+                                                      >
+                                                        <span v-html="customization.broadbandSpeed"></span>
+                                                        <span class="caret"></span>
+                                                      </button>
+                                                      <span v-if="customization.broadbandSpeed === ''" class="placeholderText">
+                                                        请选择速率
+                                                      </span>
+                                                      <ul class="dropdown-menu">
+                                                        <li v-for="item in broadbandSpeedList" :key=""item>
+                                                          <a href="#" @click="setCustomizationValue('broadbandSpeed', item)">
+                                                            <span v-html="item"></span>
+                                                          </a>
+                                                        </li>
+                                                      </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- IP地址 -->
+                                            <div v-if="is345G()" class="options" style="display: flex">
+                                                <div class="flex-option option-item">
+                                                    <div class="labelStyle">IP地址：</div>
+                                                    <div class="input-container">
+                                                        <textarea
+                                                            class="textarea-self"
+                                                            placeholder="请输入内容"
+                                                            v-model="customization.IP"
+                                                        ></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-option option-item">
+                                                    <div class="labelStyle">URL：</div>
+                                                    <div class="input-container">
+                                                        <textarea
+                                                            class="textarea-self"
+                                                            placeholder="请输入内容"
+                                                            v-model="customization.URL"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- 使用PCRF -->
+                                            <div v-if="is345G()" class="options">
+                                                <div>
+                                                    <span style="color: red">*</span>
+                                                    <span>使用PCRF：</span>
+                                                </div>
+                                                <div class="label-container">
+                                                    <div
+                                                        :class="[
+                                                            'unable-choose-label',
+                                                            PCRF === customization.activePCRF ? 'selected' : 'only-read',
+                                                        ]"
+                                                        v-for="PCRF in apnPCRFList"
+                                                        :key="PCRF"
+                                                        @click="setCustomizationValue('activePCRF', PCRF)"
+                                                    >
+                                                        {{ PCRF }}
+                                                    </div>
+                                                    <div
+                                                        v-if="customization.activePCRF === '是'"
+                                                        class="downloadButton"
+                                                    >
+                                                        PCRF申请模板下载.doc
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- 点击上传 -->
+                                            <div v-if="is345G()" class="options">
+                                                <div
+                                                    class="optionsValueOnly"
+                                                    v-if="customization.activePCRF === '是'"
+                                                >
+                                                    <div
+                                                        id="uploadButtonEl"
+                                                        class="singleButton uploadButton"
+                                                        @mouseover="uploadButtonElTipShow"
+                                                        @mouseleave="uploadButtonElTipHide"
+                                                    >
+                                                        点击上传
+                                                    </div>
+                                                    <div class="uploadText">
+                                                        只能上传doc/docx文件，且不超过10M
+                                                    </div>
+                                                    <div id="uploadButtonElTip">使用PCRF时，必须上传PCRF申请附件</div>
+                                                    <ul
+                                                        class="fileList el-upload-list el-upload-list--text"
+                                                        v-if="customization.activePCRF === '是' && isValue(pcrfFile.fileName)"
+                                                    >
+                                                        <li tabindex="0" class="el-upload-list__item is-success">
+                                                          <a class="el-upload-list__item-name">
+                                                              <i class="glyphicon glyphicon-file"></i>
+                                                              {{ pcrfFile.fileName }}
+                                                          </a>
+                                                          <em
+                                                              class="errorIcon glyphicon glyphicon-remove"
+                                                              @click="removePcrfFile"
+                                                          ></em>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+            
+                                        <!-- customization.APNType ==='VPDN' !-->
+                                        <!-- customization.businessType ==='互联网GRE' !-->
+                                        <div
+                                            class="options"
+                                            v-if="customization.APNType === APN_TYPE_VPDN && customization.businessType === BUSINESS_TYPE_GRE"
+                                        >
+                                            <div class="flex-option option-item">
+                                                <div>
+                                                    <span style="color: red">*</span>
+                                                    <span>主备接入：</span>
+                                                </div>
+                                                <div class="label-container">
+                                                    <div
+                                                        :class="[
+                                                            'unable-choose-label',
+                                                            standByConnective === customization.activeStandByConnective
+                                                                ? 'selected'
+                                                                : 'only-read',
+                                                        ]"
+                                                        v-for="standByConnective in apnStandByConnectiveList"
+                                                        :key="standByConnective"
+                                                        @click="setCustomizationValue('activeStandByConnective', standByConnective)"
+                                                    >
+                                                        {{ standByConnective }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div
+                                            v-if="
+                                                customization.APNType === APN_TYPE_VPDN &&
+                                                (customization.businessType === BUSINESS_TYPE_GRE ||
+                                                    customization.businessType === BUSINESS_TYPE_L2TP)
+                                            "
+                                        >
+                                            <div
+                                                :class="customization.businessType === BUSINESS_TYPE_L2TP ? 'options' : ''"
+                                                :style="customization.businessType === BUSINESS_TYPE_L2TP ? 'padding-bottom:0' : ''"
+                                            >
+                                                <div class="options" style="display: flex; height: 70px">
+                                                    <div class="flex-option option-item">
+                                                        <div class="item-title">
+                                                            <span style="color: red">*</span>
+                                                            <span>客户公网IP：</span>
+                                                        </div>
+                                                        <label class="textarea-style">
+                                                            <input
+                                                                class="option-input"
+                                                                placeholder="请输入内容"
+                                                                v-model="customization.publicNetIp"
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                    <div
+                                                        class="flex-option option-item"
+                                                        v-if="customization.businessType === BUSINESS_TYPE_L2TP"
+                                                        style="padding-bottom: 30px"
+                                                    >
+                                                        <div class="item-title">
+                                                            <span style="color: red">*</span>
+                                                            <span>客户自建DNS：</span>
+                                                        </div>
+                                                        <div class="label-container">
+                                                            <div
+                                                                :class="[
+                                                                    'unable-choose-label',
+                                                                    selfBuiltDNS === customization.activeSelfBuiltDNS
+                                                                        ? 'selected'
+                                                                        : 'only-read',
+                                                                ]"
+                                                                v-for="selfBuiltDNS in apnSelfBuiltDNSList"
+                                                                :key="selfBuiltDNS"
+                                                                @click="setCustomizationValue('activeSelfBuiltDNS', selfBuiltDNS)"
+                                                            >
+                                                                {{ selfBuiltDNS }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div
+                                                        class="flex-option option-item"
+                                                        v-if="
+                                                            customization.businessType === BUSINESS_TYPE_GRE &&
+                                                            customization.activeStandByConnective === '是'
+                                                        "
+                                                    >
+                                                        <div class="item-title">
+                                                            <span style="color: red">*</span>
+                                                            <span>备用客户公网IP：</span>
+                                                        </div>
+                                                        <label class="textarea-style">
+                                                            <input
+                                                                class="option-input"
+                                                                placeholder="请输入内容"
+                                                                v-model="customization.backupPublicNetIp"
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    v-if="
+                                                        customization.APNType === APN_TYPE_VPDN &&
+                                                        customization.businessType === BUSINESS_TYPE_GRE
+                                                    "
+                                                >
+                                                    <div class="options" style="display: flex; height: 70px">
+                                                        <div class="flex-option option-item">
+                                                            <div style="width: 145px">
+                                                                <span style="color: red">*</span>
+                                                                <span>指定终端地址池：</span>
+                                                            </div>
+                                                            <div class="label-container">
+                                                                <div
+                                                                    :class="[
+                                                                        'unable-choose-label',
+                                                                        terminalPool === customization.activeTerminalPool
+                                                                            ? 'selected'
+                                                                            : 'only-read',
+                                                                    ]"
+                                                                    v-for="terminalPool in apnTerminalPoolList"
+                                                                    :key="terminalPool"
+                                                                    @click="
+                                                                        setCustomizationValue(
+                                                                            'activeTerminalPool',
+                                                                            terminalPool
+                                                                        )"
+                                                                >
+                                                                    {{ terminalPool }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div
+                                                            class="flex-option option-item"
+                                                            v-if="customization.activeTerminalPool === '否'"
+                                                        >
+                                                            <div style="width: 150px" class="item-title">
+                                                                <span style="color: red">*</span>
+                                                                <span>预计终端用户数：</span>
+                                                            </div>
+                                                            <label class="textarea-style">
+                                                                <input
+                                                                    class="option-input"
+                                                                    placeholder="请输入内容"
+                                                                    v-model="customization.terminalNum"
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div
+                                                        class="options"
+                                                        style="display: flex; height: 70px"
+                                                        v-if="customization.activeTerminalPool === '是'"
+                                                    >
+                                                        <div class="flex-option option-item">
+                                                            <div class="item-title">
+                                                                <span style="color: red">*</span>
+                                                                <span>终端地址池(主)：</span>
+                                                            </div>
+                                                            <label class="textarea-style">
+                                                                <input
+                                                                    class="option-input"
+                                                                    placeholder="请输入内容"
+                                                                    v-model="customization.terminalPoolMain"
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                        <div
+                                                            class="flex-option option-item"
+                                                            v-if="customization.activeStandByConnective === '是'"
+                                                        >
+                                                            <div class="item-title">
+                                                                <span style="color: red">*</span>
+                                                                <span>终端地址池(备)：</span>
+                                                            </div>
+                                                            <label class="textarea-style">
+                                                                <input
+                                                                    class="option-input"
+                                                                    placeholder="请输入内容"
+                                                                    v-model="customization.terminalPoolBackup"
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="flexible-module" v-if="customization.businessType === BUSINESS_TYPE_GRE">
+                                                    <div class="flex-option option-item" style="padding-bottom: 30px">
+                                                        <div class="item-title">
+                                                            <span style="color: red">*</span>
+                                                            <span>客户自建DNS：</span>
+                                                        </div>
+                                                        <div class="label-container">
+                                                            <div
+                                                                :class="[
+                                                                    'unable-choose-label',
+                                                                    selfBuiltDNS === customization.activeSelfBuiltDNS
+                                                                        ? 'selected'
+                                                                        : 'only-read',
+                                                                ]"
+                                                                v-for="selfBuiltDNS in apnSelfBuiltDNSList"
+                                                                :key="selfBuiltDNS"
+                                                                @click="setCustomizationValue('activeSelfBuiltDNS', selfBuiltDNS)"
+                                                            >
+                                                                {{ selfBuiltDNS }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div
+                                                        class="flex-option option-item"
+                                                        style="padding-bottom: 30px"
+                                                        v-if="customization.businessType === BUSINESS_TYPE_GRE"
+                                                    >
+                                                        <div class="item-title" style="width: 140px">
+                                                            <span style="color: red">*</span>
+                                                            <span>终端使用固定IP：</span>
+                                                        </div>
+                                                        <div class="label-container">
+                                                            <div
+                                                                :class="[
+                                                                    'unable-choose-label',
+                                                                    fixedIP === customization.activeFixedIP
+                                                                        ? 'selected'
+                                                                        : 'only-read',
+                                                                ]"
+                                                                v-for="fixedIP in apnFixedIPList"
+                                                                :key="fixedIP"
+                                                                @click="setCustomizationValue('activeFixedIP', fixedIP)"
+                                                            >
+                                                                {{ fixedIP }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+            
+                                                <div
+                                                    class="options"
+                                                    style="padding-bottom: 0"
+                                                    v-if="customization.activeSelfBuiltDNS === '是'"
+                                                >
+                                                    <div class="options" style="display: flex; height: 70px">
+                                                        <div class="flex-option option-item">
+                                                            <div class="item-title">
+                                                                <span style="color: red">*</span>
+                                                                <span>DNS服务器(主)：</span>
+                                                            </div>
+                                                            <label class="textarea-style">
+                                                                <input
+                                                                    class="option-input"
+                                                                    placeholder="请输入内容"
+                                                                    v-model="customization.masterDNSService"
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                        <div
+                                                            class="flex-option option-item"
+                                                            v-if="customization.activeStandByConnective === '是'"
+                                                        >
+                                                            <div class="item-title">
+                                                                <span>DNS服务器(备)：</span>
+                                                            </div>
+                                                            <label class="textarea-style">
+                                                                <input
+                                                                    class="option-input"
+                                                                    placeholder="请输入内容"
+                                                                    v-model="customization.slaverDNSSservice"
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+            
+                                        <!--customization.APNType ==='VPDN' && (customization.businessType ==='专线GRE' ! || customization.businessType ==='L2TP')-->
+                                        <div
+                                            v-if="
+                                                customization.APNType === APN_TYPE_VPDN &&
+                                                (customization.businessType === BUSINESS_TYPE_GRE_L ||
+                                                    customization.businessType === BUSINESS_TYPE_L2TP_L)
+                                            "
+                                        >
+                                            <div class="options" style="display: flex; height: 70px">
+                                                <div class="flex-option option-item">
+                                                    <div>
+                                                        <span style="color: red">*</span>
+                                                        <span>电路代号：</span>
+                                                    </div>
+                                                    <label class="textarea-style">
+                                                        <input
+                                                            class="option-input"
+                                                            placeholder="请输入内容"
+                                                            v-model="customization.circuitCode"
+                                                        />
+                                                    </label>
+                                                </div>
+                                                <div class="flex-option option-item">
+                                                    <div class="item-title">
+                                                        <span style="color: red">*</span>
+                                                        <span>VLAN号：</span>
+                                                    </div>
+                                                    <label class="textarea-style">
+                                                        <input
+                                                            class="option-input"
+                                                            placeholder="请输入内容"
+                                                            v-model="customization.VLANNum"
+                                                        />
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+            
+                                        <!--customization.APNType ==='VPDN' && customization.businessType ==='专线GRE' !-->
+                                        <div
+                                            v-if="
+                                                (customization.APNType === APN_TYPE_VPDN && customization.businessType === BUSINESS_TYPE_GRE_L)
+                                                ||
+                                                customization.APNType === APN_TYPE_MEC && customization.businessType === BUSINESS_TYPE_MEC"
+                                        >
+                                            <div
+                                                class="options"
+                                                :style="customization.activeTerminalPool === '是' ? 'padding-bottom: 0' : ''"
+                                            >
+                                                <div class="flex-option option-item">
+                                                    <div style="width: 145px">
+                                                        <span style="color: red">*</span>
+                                                        <span>指定终端地址池：</span>
+                                                    </div>
+                                                    <div class="label-container">
+                                                        <div
+                                                            :class="[
+                                                                'unable-choose-label',
+                                                                terminalPool === customization.activeTerminalPool
+                                                                    ? 'selected'
+                                                                    : 'only-read',
+                                                            ]"
+                                                            v-for="terminalPool in apnTerminalPoolList"
+                                                            :key="terminalPool"
+                                                            @click="setCustomizationValue('activeTerminalPool', terminalPool)"
+                                                        >
+                                                            {{ terminalPool }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    class="flex-option option-item"
+                                                    v-if="customization.activeTerminalPool === '是'"
+                                                >
+                                                    <div style="width: 150px" class="item-title">
+                                                        <span style="color: red">*</span>
+                                                        <span>终端地址池：</span>
+                                                    </div>
+                                                    <label class="textarea-style">
+                                                        <input
+                                                            class="option-input"
+                                                            placeholder="请输入内容"
+                                                            v-model="customization.terminalPoolMain"
+                                                        />
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="options" style="padding-bottom: 0">
+                                                <div
+                                                    class="flex-option option-item"
+                                                    v-if="customization.activeTerminalPool === '是'"
+                                                ></div>
+                                                <div class="flex-option option-item" v-else>
+                                                    <div style="width: 150px" class="item-title">
+                                                        <span style="color: red">*</span>
+                                                        <span>预计终端用户数：</span>
+                                                    </div>
+                                                    <label class="textarea-style">
+                                                        <input
+                                                            class="option-input"
+                                                            placeholder="请输入内容"
+                                                            v-model="customization.terminalNum"
+                                                        />
+                                                    </label>
+                                                </div>
+                                                <div v-if="customization.businessType !== BUSINESS_TYPE_MEC" class="flex-option option-item" style="padding-bottom: 30px">
+                                                    <div class="item-title">
+                                                        <span style="color: red">*</span>
+                                                        <span>客户自建DNS：</span>
+                                                    </div>
+                                                    <div class="label-container">
+                                                        <div
+                                                            :class="[
+                                                                'unable-choose-label',
+                                                                selfBuiltDNS === customization.activeSelfBuiltDNS
+                                                                    ? 'selected'
+                                                                    : 'only-read',
+                                                            ]"
+                                                            v-for="selfBuiltDNS in apnSelfBuiltDNSList"
+                                                            :key="selfBuiltDNS"
+                                                            @click="setCustomizationValue('activeSelfBuiltDNS', selfBuiltDNS)"
+                                                        >
+                                                            {{ selfBuiltDNS }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="options"
+                                                style="padding-bottom: 0"
+                                                v-if="
+                                                    customization.activeSelfBuiltDNS === '是'
+                                                    &&
+                                                    customization.businessType !== BUSINESS_TYPE_MEC"
+                                            >
+                                                <div class="options" style="display: flex; height: 70px">
+                                                    <div class="flex-option option-item">
+                                                        <div class="item-title">
+                                                            <span style="color: red">*</span>
+                                                            <span>DNS服务器1：</span>
+                                                        </div>
+                                                        <label class="textarea-style">
+                                                            <input
+                                                                class="option-input"
+                                                                placeholder="请输入内容"
+                                                                v-model="customization.masterDNSService"
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                    <div class="flex-option option-item">
+                                                        <div class="item-title">
+                                                            <span>DNS服务器2：</span>
+                                                        </div>
+                                                        <label class="textarea-style">
+                                                            <input
+                                                                class="option-input"
+                                                                placeholder="请输入内容"
+                                                                v-model="customization.slaverDNSService"
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+            
+                                        <!--customization.APNType ==='VPDN' && (customization.businessType ==='互联网L2TP' ||customization.businessType ==='专线GRE') !-->
+                                        <div
+                                            v-if="
+                                                customization.APNType === APN_TYPE_VPDN &&
+                                                (customization.businessType === BUSINESS_TYPE_L2TP ||
+                                                    customization.businessType === BUSINESS_TYPE_L2TP_L)
+                                            "
+                                        >
+                                            <div
+                                                class="options"
+                                                :style="customization.activeLNSAddress === '是' ? 'padding-bottom: 0' : ''"
+                                            >
+                                                <div class="flex-option option-item">
+                                                    <div>
+                                                        <span style="color: red">*</span>
+                                                        <span>指定LNS地址：</span>
+                                                    </div>
+                                                    <div class="label-container">
+                                                        <div
+                                                            :class="[
+                                                                'unable-choose-label',
+                                                                LNSAddress === customization.activeLNSAddress
+                                                                    ? 'selected'
+                                                                    : 'only-read',
+                                                            ]"
+                                                            v-for="LNSAddress in apnLNSAddressList"
+                                                            :key="LNSAddress"
+                                                            @click="setCustomizationValue('activeLNSAddress', LNSAddress)"
+                                                        >
+                                                            {{ LNSAddress }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-option option-item" v-if="customization.activeLNSAddress === '是'">
+                                                    <div class="item-title">
+                                                        <span style="color: red">*</span>
+                                                        <span>LNS地址：</span>
+                                                    </div>
+                                                    <label class="textarea-style">
+                                                        <input
+                                                            class="option-input"
+                                                            placeholder="请输入内容"
+                                                            v-model="customization.apnLnsAddress"
+                                                        />
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+            
+                                        <!--customization.APNType ==='VPDN' public-->
+                                        <div
+                                            class="options"
+                                            style="display: flex"
+                                            v-if="customization.APNType === APN_TYPE_VPDN || customization.APNType === APN_TYPE_MEC"
+                                        >
+                                            <div
+                                                class="flexible-module"
+                                                v-if="
+                                                    customization.businessType === BUSINESS_TYPE_GRE_L
+                                                    ||
+                                                    customization.businessType === BUSINESS_TYPE_MEC"
+                                            >
+                                                <div class="item-title" style="width: 140px">
+                                                    <span style="color: red">*</span>
+                                                    <span>终端使用固定IP：</span>
+                                                </div>
+                                                <div class="label-container">
+                                                    <div
+                                                        :class="[
+                                                            'unable-choose-label',
+                                                            fixedIP === customization.activeFixedIP ? 'selected' : 'only-read',
+                                                        ]"
+                                                        v-for="fixedIP in apnFixedIPList"
+                                                        :key="fixedIP"
+                                                          @click="setCustomizationValue('activeFixedIP', fixedIP)"
+                                                    >
+                                                        {{ fixedIP }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div
+                                                v-if="customization.businessType !== BUSINESS_TYPE_MEC && customization.businessType === BUSINESS_TYPE_GRE_L"
+                                                class="flexible-module"
+                                            >
+                                                <div class="dropdown dp-customize">
+                                                    <div style="width: 145px; line-height: 40px; color: #606266">
+                                                        <span style="color: red">*</span>
+                                                        <span>速率：</span>
+                                                    </div>
+                                                    <div class="bs-select btn-group">
+                                                      <button
+                                                          type="button"
+                                                          class="select-self btn btn-default dropdown-toggle"
+                                                          data-toggle="dropdown"
+                                                          aria-haspopup="true"
+                                                          aria-expanded="false"
+                                                      >
+                                                        <span v-html="customization.broadbandSpeed"></span>
+                                                        <span class="caret"></span>
+                                                      </button>
+                                                      <span v-if="customization.broadbandSpeed === ''" class="placeholderText">
+                                                        请选择速率
+                                                      </span>
+                                                      <ul class="dropdown-menu">
+                                                        <li v-for="item in broadbandSpeedListVPDN" :key=""item>
+                                                          <a href="#" @click="setCustomizationValue('broadbandSpeed', item)">
+                                                            <span v-html="item"></span>
+                                                          </a>
+                                                        </li>
+                                                      </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div
+                                                v-if="customization.businessType !== BUSINESS_TYPE_MEC && customization.businessType !== BUSINESS_TYPE_GRE_L"
+                                                class="flexible-module"
+                                            >
+                                                <div class="dropdown dp-customize">
+                                                    <div style="width: 145px; line-height: 40px; color: #606266">
+                                                        <span style="color: red">*</span>
+                                                        <span>速率：</span>
+                                                    </div>
+                                                    <div class="bs-select btn-group">
+                                                      <button
+                                                          type="button"
+                                                          class="select-self btn btn-default dropdown-toggle"
+                                                          data-toggle="dropdown"
+                                                          aria-haspopup="true"
+                                                          aria-expanded="false"
+                                                      >
+                                                        <span v-html="customization.broadbandSpeed"></span>
+                                                        <span class="caret"></span>
+                                                      </button>
+                                                      <span v-if="customization.broadbandSpeed === ''" class="placeholderText">
+                                                        请选择速率
+                                                      </span>
+                                                      <ul class="dropdown-menu">
+                                                        <li v-for="item in broadbandSpeedListVPDN" :key=""item>
+                                                          <a href="#" @click="setCustomizationValue('broadbandSpeed', item)">
+                                                            <span v-html="item"></span>
+                                                          </a>
+                                                        </li>
+                                                      </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- customization.APNType ==='MEC' -->
+                                        <!-- UPF N4 | TAC -->
+                                        <div
+                                            v-if="is345G() && customization.APNType === APN_TYPE_MEC"
+                                            class="options"
+                                            style="display: flex; height: 70px"
+                                        >
+                                            <div class="flex-option option-item">
+                                                <div>
+                                                    <span style="color: red">*</span>
+                                                    <span>UPF N4：</span>
+                                                </div>
+                                                <label class="textarea-style">
+                                                    <input
+                                                        class="option-input"
+                                                        placeholder="请输入内容"
+                                                        v-model="customization.apnUpf"
+                                                    />
+                                                </label>
+                                            </div>
+                                            <div class="flex-option option-item">
+                                                <div class="item-title">
+                                                    <span style="color: red">*</span>
+                                                    <span>TAC：</span>
+                                                </div>
+                                                <label class="textarea-style">
+                                                    <input
+                                                        class="option-input"
+                                                        placeholder="请输入内容"
+                                                        v-model="customization.apnTac"
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="options">
+                                            <div>备注：</div>
+                                            <label class="textarea-style">
+                                                <textarea v-model="customization.remark" placeholder="请输入内容"></textarea>
+                                            </label>
+                                        </div>
+                                        <div v-if="submitAPNErrorList.length > 0">
+                                          <div class="alert alert-danger" role="alert">
+                                            {{ submitAPNErrorList.join('；') }}
+                                          </div>
+                                        </div>
+                                        <div class="optionsFooter">
+                                            <div class="optionsFooterButton confirmButton"  @click="doSubmitEdit">确认</div >
+                                            <div
+                                              id="closeAPNModalEditButton"
+                                              class="optionsFooterButton cancelButton"
+                                              data-toggle="modal"
+                                              data-target="#APNModalEdit"
+                                            >
+                                                取消
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--↑↑↑APN配置模态框↑↑↑!-->
+                </div>
+            </div>
+        </div>
+
+        <!-- 通信计划 展示内容 -->
+        <div v-if="communicationPlanConfig(goods) && communicationPlanConfig(goods).length>0">
+            <div class="commodity-info">
+                <div>商品名称：{{communicationPlanConfig(goods)[0].attrGrpName}}</div>
+            </div>
+            <div>
+                <div class="container-level-1">
+                    <div class="color-block"></div>
+                    <div class="title-level-1">业务信息</div>
+                </div>
+                <div class="container-block">
+                    <div class="container-level-2">
+                        <div class="color-block"></div>
+                        <div class="title-level-2">{{communicationPlanConfig(goods)[0].attrGrpName}}</div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <div class="table-structure table-structure-communication table-head">
+                        <div>默认通信计划</div>
+                        <div>通信计划名称</div>
+                        <div>数据</div>
+                        <div>语音</div>
+                        <div>短信</div>
+                        <div>语音限额(分钟/月)</div>
+                        <div>短信限额(条/月)</div>
+                        <div>漫游限制</div>
+                        <div>来电显示</div>
+                        <div>语音白名单</div>
+                        <div>开通4G</div>
+                        <div>APN</div>
+                    </div>
+                    <div class="table-structure table-structure-communication table-body"
+                         v-for="plan in communicationPlanConfig(goods)">
+                        <div>
+                            <label><input type="radio" name="defaultCommunicationPlanName" value="getAttrValue(plan.attrVoList, 'default_communication_plan') === 'true'"
+                                          :checked="getAttrValue(plan.attrVoList, 'default_communication_plan') === 'true'"></label>
+                        </div>
+                        <div class="click" type="button" data-toggle="modal" data-target="#communicationPlanModal">
+                            {{getAttrValue(plan.attrVoList, 'communication_plan_name')}}
+                        </div>
+                        <div>
+                            {{getAttrValue(plan.attrVoList, 'communication_type').split('+').indexOf('数据') !== -1 ? '√' : '×'}}
+                        </div>
+                        <div>
+                            {{getAttrValue(plan.attrVoList, 'communication_type').split('+').indexOf('语音') !== -1 ? '√' : '×'}}
+                        </div>
+                        <div>
+                            {{getAttrValue(plan.attrVoList, 'communication_type').split('+').indexOf('短信') !== -1 ? '√' : '×'}}
+                        </div>
+                        <div>{{getAttrValue(plan.attrVoList, 'voice_MO_limit')}}</div>
+                        <div>{{getAttrValue(plan.attrVoList, 'sms_MOMT_limit')}}</div>
+                        <div>{{getAttrValue(plan.attrVoList, 'roaming_area')}}</div>
+                        <div>{{getAttrValue(plan.attrVoList, 'caller_id')}}</div>
+                        <div>{{getAttrValue(plan.attrVoList, 'voice_whitelist') === '' ? '无' : '有'}}</div>
+                        <div>{{getAttrValue(plan.attrVoList, 'open_4g')}}</div>
+                        <div>{{getAttrValue(plan.attrVoList, 'related_apn')}}</div>
+                    </div>
+                </div>
+                <!--通讯计划模态框!-->
+                <div class="my-modal modal fade" id="communicationPlanModal" tabindex="-1" role="dialog"
+                     aria-labelledby="communicationPlanLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;
+                                </button>
+                                <h4 class="modal-title" id="communicationPlanLabel">通讯计划</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div style="display: flex; flex-flow: wrap">
+                                    <div class="plan-option">
+                                        <span>通讯计划名称：</span>
+                                        <span>{{getAttrValue(activeCommunicationPlan.attrVoList, 'communication_plan_name')}}</span>
+                                    </div>
+                                    <div class="plan-option">
+                                        <span>通讯类型：</span>
+                                        <span>{{getAttrValue(activeCommunicationPlan.attrVoList, 'communication_type')}}</span>
+                                    </div>
+                                    <div class="plan-option">
+                                        <span>启用固定IP：</span>
+                                        <span>{{getAttrValue(activeCommunicationPlan.attrVoList, 'enable_fixed_ip')}}</span>
+                                    </div>
+                                    <div class="plan-option">
+                                        <span>漫游区域：</span>
+                                        <span>{{getAttrValue(activeCommunicationPlan.attrVoList, 'roaming_area')}}</span>
+                                    </div>
+                                    <div class="plan-option">
+                                        <span>APN设置：</span>
+                                        <span>{{getAttrValue(activeCommunicationPlan.attrVoList, 'related_apn')}}</span>
+                                    </div>
+                                    <div class="plan-option">
+                                        <span>短信(MO(发送)+MT(接收))使用限额：</span>
+                                        <span>{{getAttrValue(activeCommunicationPlan.attrVoList, 'sms_MOMT_limit')}}</span>
+                                    </div>
+                                    <div class="plan-option">
+                                        <span>语音MO(呼出)使用限额：</span>
+                                        <span>{{getAttrValue(activeCommunicationPlan.attrVoList, 'voice_MO_limit')}}</span>
+                                    </div>
+                                    <div class="plan-option">
+                                        <span>来电显示：</span>
+                                        <span>{{getAttrValue(activeCommunicationPlan.attrVoList, 'caller_id')}}</span>
+                                    </div>
+                                    <div class="plan-option">
+                                        <span>漫语音白名单：</span>
+                                        <span>{{getAttrValue(activeCommunicationPlan.attrVoList, 'roaming_voice_whitelist')}}</span>
+                                    </div>
+                                    <div class="plan-option">
+                                        <span>白名单号码：</span>
+                                        <span>{{getAttrValue(activeCommunicationPlan.attrVoList, 'voice_whitelist')}}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 资费计划 展示内容 -->
+        <div v-if="tariffPlanConfig(goods) && tariffPlanConfig(goods).length>0">
+            <div class="commodity-info">
+                <div>商品名称：{{tariffPlanConfig(goods)[0].attrGrpName}}</div>
+            </div>
+            <div class="tariff-plan">
+                <div class="container-level-1">
+                    <div class="color-block"></div>
+                    <div class="title-level-1">业务信息</div>
+                </div>
+                <div class="container-block">
+                    <div class="container-level-2">
+                        <div class="color-block"></div>
+                        <div class="title-level-2">{{tariffPlanConfig(goods)[0].attrGrpName}}</div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <div class="table-structure table-structure-tariff table-head">
+                        <div>默认资费计划</div>
+                        <div>资费计划名称</div>
+                        <div>资费计划类型</div>
+                    </div>
+                    <div class="table-structure table-structure-tariff table-body"
+                         v-for="plan in tariffPlanConfig(goods)">
+                        <div>
+                            <label><input type="radio" name="defaultTariffPlanName" value="getAttrValue(plan.attrVoList, 'default_tariff_plan') === 'true'"
+                                          :checked="getAttrValue(plan.attrVoList, 'default_tariff_plan') === 'true'"></label>
+                        </div>
+                        <div class="click" type="button" data-toggle="modal" data-target="#tariffPlanModal">
+                            {{getAttrValue(plan.attrVoList, 'tariff_plan_name')}}
+                        </div>
+                        <div>{{getAttrValue(plan.attrVoList, '')}}</div>  <!--资费计划类型 !-->
+                    </div>
+                </div>
+                <!--资费计划模态框!-->
+                <div class="my-modal modal fade" id="tariffPlanModal" tabindex="-1" role="dialog"
+                     aria-labelledby="tariffPlanLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog" style="width: 850px">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;
+                                </button>
+                                <h4 class="modal-title" id="tariffPlanLabel">资费计划(国漫)</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div>
+                                    <div class="container-level-1">
+                                        <div class="color-block"></div>
+                                        <div class="title-level-1">基本信息</div>
+                                    </div>
+                                    <div style="display: flex; flex-flow: wrap">
+                                        <div class="plan-option">
+                                            <span>通信套包类型：</span>
+                                            <span>{{getAttrValue(activeTariffPlan.attrVoList, 'communication_package_type')}}</span>
+                                        </div>
+                                        <div class="plan-option">
+                                            <span>资费计划名称：</span>
+                                            <span>{{getAttrValue(activeTariffPlan.attrVoList, 'tariff_plan_name')}}</span>
+                                        </div>
+                                        <div class="plan-option">
+                                            <span>周期用量限制：</span>
+                                            <span>{{getAttrValue(activeTariffPlan.attrVoList, 'cycle_usage_limit')}}</span>
+                                        </div>
+                                        <div class="plan-option">
+                                            <span>期限（天）：</span>
+                                            <span>{{getAttrValue(activeTariffPlan.attrVoList, 'duration')}}</span>
+                                        </div>
+                                        <div class="plan-option">
+                                            <span>根据用量终止期限：</span>
+                                            <span>{{getAttrValue(activeTariffPlan.attrVoList, 'termination_period')}}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="container-level-1">
+                                        <div class="color-block"></div>
+                                        <div class="title-level-1">资费服务</div>
+                                    </div>
+                                    <div>
+                                        <div class="container-level-2">
+                                            <div class="color-block"></div>
+                                            <div class="title-level-2">{{activeTariffPlan.attrGrpName}}</div>
+                                        </div>
+                                        <div style="display: flex; flex-flow: wrap">
+                                            <div class="plan-option" v-for="area in activeTariffPlan.attrVoList">
+                                                <span>{{ area.attrName }}：</span>
+                                                <span>{{ area.attrValue }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="commodity-info" v-if="tip === true">
+                                            <div>除以上区域之外其他区域流量费用默认为0.05元/kb</div>
+                                            <div class="tips" @click="tip=false">×</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="container-level-1">
+                                        <div class="color-block"></div>
+                                        <div class="title-level-1">折扣详情</div>
+                                    </div>
+                                    <div style="display: flex; flex-flow: wrap">
+                                        <div class="plan-option">
+                                            <span>折扣类型：</span>
+                                            <span>{{getAttrValue(activeTariffPlan.attrVoList, 'discount_type')}}</span>
+                                        </div>
+                                        <div class="plan-option">
+                                            <span>灵活共享系数：</span>
+                                            <span>{{getAttrValue(activeTariffPlan.attrVoList, 'flexible_sharing_factor')}}</span>
+                                        </div>
+                                        <div class="plan-option">
+                                            <span>折扣率：</span>
+                                            <span>{{getAttrValue(activeTariffPlan.attrVoList, 'discount_rate')}}</span>
+                                        </div>
+                                        <div style="width: 90%">
+                                            <div style="width: 100%; padding:10px 0 0 5px">
+                                                <div class="table-structure table-structure-customize table-head">
+                                                    <div>数量分档(万户)</div>
+                                                    <div>折扣率(%)</div>
+                                                    <div>最终订购费</div>
+                                                </div>
+                                                <!--<div class="table-structure table-structure-customize table-body"-->
+                                                <!--     v-for="binning in JSON.parse(getAttrValue(activeTariffPlan.attrVoList,'binning_info'))">-->
+                                                <!--    <div>{{binning.binningNum}}</div>-->
+                                                <!--    <div>{{binning.binningDiscountRate}}</div>-->
+                                                <!--    <div>{{binning.finalOrderFee}}</div>-->
+                                                <!--</div>-->
+                                                <div class="table-structure table-structure-customize table-body">
+                                                    <div>这里</div>
+                                                    <div>的数据</div>
+                                                    <div>跑到上面去啦</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 补充通信包 展示内容 -->
+        <div>
+            <div class="commodity-info">
+                <div>商品名称：补充通信套包</div>
+            </div>
+            <div>
+                <div class="container-level-1">
+                    <div class="color-block"></div>
+                    <div class="title-level-1">业务信息</div>
+                </div>
+                <div v-if="supplementTariffPlanConfig(goods) && supplementTariffPlanConfig(goods).length>0">
+                    <div class="container-block">
+                        <div class="container-level-2">
+                            <div class="color-block"></div>
+                            <div class="title-level-2">补充通信套包</div>
+                        </div>
+                    </div>
+                    <div class="table-container table-supplement">
+                        <div class="table-structure table-structure-supplement table-head">
+                            <div>名称</div>
+                            <div>套包类型</div>
+                            <div>所属APN</div>
+                            <div>套包价格（元）</div>
+                            <div>套包内用量（MB）</div>
+                            <div>备注</div>
+                        </div>
+                        <div class="table-structure table-structure-supplement table-body"
+                             v-for="config in supplementTariffPlanConfig(goods)">
+                            <div>{{getAttrValue(config.attrVoList, 'package_name')}}</div>
+                            <div>{{getAttrValue(config.attrVoList, 'package_type')}}</div>
+                            <div>{{getAttrValue(config.attrVoList, 'belong_apn')}}</div>
+                            <div>{{getAttrValue(config.attrVoList, 'package_price')}}</div>
+                            <div>{{getAttrValue(config.attrVoList, 'package_cunsum')}}</div>
+                            <div>{{getAttrValue(config.attrVoList, 'package_remarks')}}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container-block">
+                    <div class="container-level-2">
+                        <div class="color-block"></div>
+                        <div class="title-level-2">承诺</div>
+                    </div>
+                    <div class="item-line">
+                        <div>SIM卡计费宽限期：{{getValue(goods, 'sim_billing_grace_period')}}</div>
+                        <div>SIM卡激活起最短连续计费期限(月)：{{getValue(goods, 'sim_minimum_billing_period')}}</div>
+                        <div>激活首月订购收费方式：{{getValue(goods, 'sim_first_month_billing')}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 测试套包 展示内容 -->
+        <div v-if="testPackageConfig(goods) && testPackageConfig(goods).length > 0">
+            <div class="commodity-info">
+                <div>商品名称：测试套包</div>
+            </div>
+            <div>
+                <div class="container-level-1">
+                    <div class="color-block"></div>
+                    <div class="title-level-1">业务信息</div>
+                </div>
+                <div class="container-block">
+                    <div class="container-level-2">
+                        <div class="color-block"></div>
+                        <div class="title-level-2">测试套包</div>
+                    </div>
+                    <div>
+                        <div class="item-line">
+                            <div>测试流量（MB）：{{getValue(testPackageConfig(goods)[0], 'test_flow')}}</div>
+                            <div>测试短信（条）：{{getValue(testPackageConfig(goods)[0], 'test_sms')}}</div>
+                            <div>测试用量价格（元）：{{getValue(testPackageConfig(goods)[0], 'test_consum_price')}}</div>
+                            <div>订购价格（元/连接）：{{getValue(testPackageConfig(goods)[0], 'test_order_price')}}</div>
+                        </div>
+                        <div class="item-line">
+                            <div>折扣率（%）：{{getValue(testPackageConfig(goods)[0], 'test_discount_rate')}}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 单独付费服务项目 展示内容 -->
+        <div v-if="independentPayConfig(goods) && independentPayConfig(goods).length > 0">
+            <div class="commodity-info">
+                <div>商品名称：单独付费服务项目</div>
+            </div>
+            <div class="customize">
+                <div class="container-level-1">
+                    <div class="color-block"></div>
+                    <div class="title-level-1">业务信息</div>
+                </div>
+                <div class="container-block">
+                    <div class="container-level-2">
+                        <div class="color-block"></div>
+                        <div class="title-level-2">单独付费服务项目</div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <div class="table-structure table-structure-customize table-head">
+                        <div>选用项目服务</div>
+                        <div>是否选用</div>
+                        <div>标准价格</div>
+                        <div>折扣率</div>
+                        <div>最终订购价格</div>
+                        <div>备注</div>
+                    </div>
+                    <div class="table-structure table-structure-customize table-body" v-for="config in independentPayConfig(goods)">
+                        <div>{{getAttrValue(config.attrVoList, 'choose_project_service')}}</div>
+                        <div>{{getAttrValue(config.attrVoList, 'is_choosed')}}</div>
+                        <div>{{getAttrValue(config.attrVoList, 'standard_price')}}</div>
+                        <div>{{getAttrValue(config.attrVoList, 'separate_pay_discount_rate')}}</div>
+                        <div>{{getAttrValue(config.attrVoList, 'final_order_price')}}</div>
+                        <div>{{getAttrValue(config.attrVoList, 'separate_pay_remarks')}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 承载平台信息 展示内容 -->
+        <div v-if="currentStep!=='appConfig'">
+            <div class="container-level-1">
+                <div class="color-block"></div>
+                <div class="title-level-1">承载平台信息</div>
+            </div>
+            <div style="display: flex; height: 40px; margin:5px 0 0 30px">
+                <div class="item-title">
+                    <span style="color: red">*</span>
+                    <span>承载系统编号：</span>
+                </div>
+                <label class="textarea-style">
+                    <input
+                        class="option-input"
+                        placeholder="请输入内容"
+                        readonly="readonly"
+                        v-model="bearingSystemCode"
+                    />
+                </label>
+            </div>
+        </div>
+
+        <!-- 批次信息 展示内容 -->
+        <div v-if="+getValue(goods, 'order_quantity') !== 0">
+            <div class="container-level-1">
+                <div class="color-block"></div>
+                <div class="title-level-1">批次信息</div>
+            </div>
+            <div class="container-block">
+                <div class="container-level-2">
+                    <div class="color-block"></div>
+                    <div class="title-level-2">本批次信息</div>
+                </div>
+                <div class="table-container">
+                    <div class="table-structure table-structure-batch table-head">
+                        <div>批次</div>
+                        <div>物联网订单编号</div>
+                        <div>物联网批次号</div>
+                        <div>订单数量</div>
+                        <div>未配置数量</div>
+                        <div>本批次配置数量</div>
+                        <div>发货方式</div>
+                    </div>
+                    <div class="table-structure table-structure-batch table-body" v-if="currentBatch !==''">
+                        <div>{{currentBatch.batchSerial}}</div>
+                        <div>{{currentBatch.orderId}}</div>
+                        <div>{{currentBatch.batchNo}}</div>
+                        <div>{{orderInfo.orderQuantity}}</div>
+                        <div>{{currentBatch.surplusQuantity}}</div>
+                        <div>{{currentBatch.acceptQuantity}}</div>
+                        <div>{{currentBatch.internetDelivery}}</div>
+                    </div>
+                    <div class="hint" v-else>请先在资源系统进行配号，配号完成后会生成待配置任务</div>
+                </div>
+
+
+                <div class="container-level-2">
+                    <div class="color-block"></div>
+                    <div class="title-level-2">其他批次信息</div>
+                </div>
+                <div class="table-container">
+                    <div class="table-structure table-structure-batch table-head">
+                        <div>批次</div>
+                        <div>物联网订单编号</div>
+                        <div>物联网批次号</div>
+                        <div>订单数量</div>
+                        <div>未配置数量</div>
+                        <div>本批次配置数量</div>
+                        <div>发货方式</div>
+                        <div>状态</div>
+                    </div>
+                    <div class="table-structure table-structure-batch table-body"
+                         v-if="historyBatches.length> 0 " v-for="batch in historyBatches">
+                        <div>{{batch.batchSerial}}</div>
+                        <div>{{batch.orderId}}</div>
+                        <div>{{batch.batchNo}}</div>
+                        <div>{{orderInfo.orderQuantity}}</div>
+                        <div>{{batch.surplusQuantity}}</div>
+                        <div>{{batch.acceptQuantity}}</div>
+                        <div>{{batch.internetDelivery}}</div>
+                        <div>{{batch.status}}</div>
+                    </div>
+                    <div class="table-structure table-structure-batch table-body" v-else>
+                        <div>-</div>
+                        <div>-</div>
+                        <div>-</div>
+                        <div>-</div>
+                        <div>-</div>
+                        <div>-</div>
+                        <div>-</div>
+                        <div>-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 附件下载 -->
+    <div class="container-level-1" v-if="fileVoList.length>0">
+        <div class="color-block"></div>
+        <div class="title-level-1">附件</div>
+        <div class="container-block file-download">
+            <div v-for="file in fileVoList">
+                <a href="file.filePath" :download="file.fileName">下载{{file.fileName}}</a>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- 引入 码表 -->
+<script src="${base}/static/js/view/modules/business/general/order/primary/connective/codeTable.js" type="text/javascript"></script>
+<script type="text/javascript">
+  let form = new Vue({
+    el: '#form',
+    data() {
+      return {
+        // 自定义常量 挂载
+        APN_ADD_METHOD_SHARED, // 使用共享APN
+        APN_ADD_METHOD_CREATED, // 使用已创建APN
+        APN_ADD_METHOD_CUSTOM, // 我要定制
+        APN_TYPE_INTERNET, // 互联网
+        APN_TYPE_VPDN, // VPDN
+        APN_TYPE_MEC, // MEC
+        BUSINESS_TYPE_WHITELIST, // 白名单
+        BUSINESS_TYPE_BLACKLIST, // 黑名单
+        BUSINESS_TYPE_GRE, // 互联网GRE
+        BUSINESS_TYPE_L2TP, // 互联网L2TP
+        BUSINESS_TYPE_GRE_L, // 专线GRE
+        BUSINESS_TYPE_L2TP_L, // 专线L2TP
+        BUSINESS_TYPE_MEC, // MEC
+        // 码表数据 挂载
+        connectionTypeList, // 连接方式
+        apnAddWayList, // 新增APN方式
+        apnPCRFList, // PCRF 是否
+        apnStandByConnectiveList, // 主备接入 是否
+        apnSelfBuiltDNSList, // 客户自建DNS 是否
+        apnTerminalPoolList, // 指定终端地址池 是否
+        apnFixedIPList, // 终端使用固定IP 是否
+        apnLNSAddressList, // 指定LNS地址 是否
+        broadbandSpeedList, // 互联网 速率
+        broadbandSpeedListVPDN, // VPDN 速率
+        apnPagingCycleList, // eDRX寻呼周期 开启关闭
+        apnPagingWindowList, // eDRX寻呼窗口 开启关闭
+        
+        orderInfo: null,
+        connectionType: '', // 连接类型 3/4G NB 5G
+        currentStep: '',
+        goodsVoList: [],
+        activeGoodsInstanceId: '',
+        activeAPNConfig: null,
+        activeCommunicationPlan: null,
+        activeTariffPlan: null,
+
+        tip: true,
+
+        remark: "",
+        customization: {},
+        currentBatch: '',
+        bearingSystemCode:'',
+        historyBatches: [],
+        fileVoList: [], // 附件
+        pcrfFile: {},
+        submitAPNErrorList: [], // 错误信息list
+      }
+    },
+    created() {
+      let meta = JSON.parse('${data.formData}' || '')
+      let orderInfo = meta.orderInfo || {}
+      this.orderInfo = orderInfo
+      this.goodsVoList = orderInfo.goodsVoList
+			this.canEditAPN = meta.canEditAPN || ''
+      this.currentBatch = meta.currentBatch || ''
+      this.bearingSystemCode = meta.bearingSystemCode || ''
+      this.historyBatches = meta.historyBatches || []
+      this.fileVoList = orderInfo.fileVoList || []  // 附件
+      this.activeGoodsInstanceId = orderInfo.goodsVoList[0].goodsInstanceId || ''
+      this.activeAPNConfig = this.APNConfig(orderInfo.goodsVoList[0])[0] || {}
+      this.activeCommunicationPlan = this.communicationPlanConfig(orderInfo.goodsVoList[0])[0] || {}
+      this.activeTariffPlan = this.tariffPlanConfig(orderInfo.goodsVoList[0])[0] || {}
+      this.currentStep = '${data.flow.taskDefKey}' || ''
+      this.connectionType = this.getValue(orderInfo.goodsVoList[0], 'connection_type')
+      // 我要定制
+      this.initCustomization()
+    },
+    mounted(){
+      const self = this
+      // 获取文件列表
+      self.getAttachlist()
+      // 格式化 上传按钮 （示用layer 的 upload组件）
+      self.formatUploadButtonEl()
+    },
+    computed: {
+      remarkIndex() {
+        return this.orderInfo.goodsVoList[0].attrVoList.findIndex(x => x.attrCode === 'remarks')
+      },
+      apnDomainList() {
+        const self = this
+        let result = []
+        switch (self.connectionType) {
+          case CONNECTION_TYPE_34G:
+            result = apnDomainList34G
+            break
+          case CONNECTION_TYPE_NB:
+            result = apnDomainListNB
+            break
+          case CONNECTION_TYPE_5G:
+            result = apnDomainList5G
+            break
+        }
+        return result
+      },
+      apnTypeList() {
+        const self = this
+        let result = []
+        switch (self.connectionType) {
+          case CONNECTION_TYPE_34G:
+          case CONNECTION_TYPE_NB:
+            result = apnTypeList34GNB
+            break
+          case CONNECTION_TYPE_5G:
+            result = apnTypeList5G
+            break
+        }
+        return result
+      },
+      apnBusinessTypeList() {
+        const self = this
+        let result = apnBusinessTypeInternetList
+        switch (self.customization.APNType) {
+          case APN_TYPE_INTERNET:
+            result = apnBusinessTypeInternetList
+            break
+          case APN_TYPE_VPDN:
+            result = apnBusinessTypeVPDNList
+            break
+          case APN_TYPE_MEC:
+            result = apnBusinessType5GList
+            self.customization.businessType = BUSINESS_TYPE_MEC
+            break
+        }
+        return result
+      }
+    },
+    methods: {
+      // 提交APN时的校验规则
+      submitAPNValidate() {
+        const self = this
+        const {
+          isNB,
+          is345G,
+          isValue,
+          setData,
+          submitAPNErrorList,
+          connectionType,
+          customization,
+          pcrfFile
+        } = self
+        submitAPNErrorList.length = 0
+        const {
+          APNType, // APN类型
+          businessType, // 细分业务类型
+          activeStandByConnective, // 主备接入
+          publicNetIp, // 客户公网IP
+          backupPublicNetIp, // 备用客户公网IP
+          activeTerminalPool, // 指定终端地址池
+          activeSelfBuiltDNS, // 客户自建DNS
+          activeFixedIP, // 终端使用固定IP
+          broadbandSpeed, // 速率
+          terminalNum, // 预计终端用户数
+          terminalPoolMain, // 终端地址池(主)
+          terminalPoolBackup, // 终端地址池(备)
+          masterDNSService, // DNS服务器(主)
+          activeLNSAddress, // 指定LNS地址
+          apnLnsAddress, // LNS地址
+          activePCRF, // 使用PCRF
+          circuitCode, // 电路代号
+          VLANNum, // VLAN号
+          activeTime, // Active Time(s)
+          tau, // TAU(定时器) - 必填
+          pagingCycle, // eDRX寻呼周期
+          pagingWindow // eDRX寻呼窗口
+        } = customization
+        // 3/4/5G => 我要定制 => 互联网
+        if (is345G() && APNType + '' === APN_TYPE_INTERNET) {
+          if (broadbandSpeed === '') { submitAPNErrorList.push('请选择速率') }
+          if (activePCRF === '') { submitAPNErrorList.push('请选择是否使用PCRF') }
+          // PCRF==='是' => 文件必传
+          if (activePCRF === CONST_YES && !isValue(pcrfFile.fileName)) { submitAPNErrorList.push('请上传PCRF相关文件') }
+        }
+        // NB => 我要定制 => 互联网
+        if (isNB() && APNType + '' === APN_TYPE_INTERNET) {
+          if (activeTime === '') { submitAPNErrorList.push('请填写Active Time(s)') }
+          if (tau === '') { submitAPNErrorList.push('请填写TAU(定时器)') }
+          if (pagingCycle === '') { submitAPNErrorList.push('请选择是否开启eDRX寻呼周期') }
+          if (pagingWindow === '') { submitAPNErrorList.push('请选择是否开启eDRX寻呼窗口') }
+        }
+        // 3/4G/NB/5G => 我要定制 => VPDN
+        if (APNType + '' === APN_TYPE_VPDN) {
+          if (businessType === BUSINESS_TYPE_GRE) {
+            // 3/4G/NB/5G => 我要定制 => VPDN => 互联网GRE
+            if (activeStandByConnective === '') { submitAPNErrorList.push('请选择主备接入') }
+            if (publicNetIp === '') { submitAPNErrorList.push('请填写客户公网IP') }
+            if (activeStandByConnective === CONST_YES &&
+              backupPublicNetIp === '') { submitAPNErrorList.push('请填写备用客户公网IP') }
+            // 指定终端地址池 相关
+            if (activeTerminalPool === '') { submitAPNErrorList.push('请选择是否指定终端地址池') }
+            if (activeTerminalPool === CONST_NO &&
+              terminalNum === '') { submitAPNErrorList.push('请填写预计终端用户数') }
+            if (activeTerminalPool === CONST_YES &&
+              terminalPoolMain === '') { submitAPNErrorList.push('请填写终端地址池(主)') }
+            if (activeStandByConnective === CONST_YES &&
+              activeTerminalPool === CONST_YES &&
+              terminalPoolBackup === '') { submitAPNErrorList.push('请填写终端地址池(备)') }
+            // 客户自建DNS 相关
+            if (activeSelfBuiltDNS === '') { submitAPNErrorList.push('请选择是否客户自建DNS') }
+            if (activeSelfBuiltDNS === CONST_YES &&
+              masterDNSService === '') { submitAPNErrorList.push('请填写DNS服务器(主)') }
+            
+            if (activeFixedIP === '') { submitAPNErrorList.push('请选择是否终端使用固定IP') }
+            if (broadbandSpeed === '') { submitAPNErrorList.push('请选择速率') }
+          } else if (businessType === BUSINESS_TYPE_L2TP) {
+            // 3/4G/NB/5G => 我要定制 => VPDN => 互联网L2TP
+            if (publicNetIp === '') { submitAPNErrorList.push('请填写客户公网IP') }
+            // 客户自建DNS 相关
+            if (activeSelfBuiltDNS === '') { submitAPNErrorList.push('请选择是否客户自建DNS') }
+            if (activeSelfBuiltDNS === CONST_YES &&
+              masterDNSService === '') { submitAPNErrorList.push('请填写DNS服务器(主)') }
+            // 指定LNS地址 相关
+            if (activeLNSAddress === '') { submitAPNErrorList.push('请选择是否指定LNS地址') }
+            if (activeLNSAddress === CONST_YES &&
+              apnLnsAddress === '') { submitAPNErrorList.push('请填写LNS地址') }
+            if (broadbandSpeed === '') { submitAPNErrorList.push('请选择速率') }
+          } else if (businessType === BUSINESS_TYPE_GRE_L) {
+            // 3/4G/NB/5G => 我要定制 => VPDN => 专线GRE
+            if (circuitCode === '') { submitAPNErrorList.push('请填写电路代号') }
+            if (VLANNum === '') { submitAPNErrorList.push('请填写VLAN号') }
+            // 指定终端地址池 相关
+            if (activeTerminalPool === '') { submitAPNErrorList.push('请选择是否指定终端地址池') }
+            if (activeTerminalPool === CONST_NO &&
+              terminalNum === '') { submitAPNErrorList.push('请填写预计终端用户数') }
+            if (activeTerminalPool === CONST_YES &&
+              terminalPoolMain === '') { submitAPNErrorList.push('请填写终端地址池') }
+            // 客户自建DNS 相关
+            if (activeSelfBuiltDNS === '') { submitAPNErrorList.push('请选择是否客户自建DNS') }
+                if (activeSelfBuiltDNS === CONST_YES &&
+              masterDNSService === '') { submitAPNErrorList.push('请填写DNS服务器1') }
+            
+            if (activeFixedIP === '') { submitAPNErrorList.push('请选择是否终端使用固定IP') }
+            if (broadbandSpeed === '') { submitAPNErrorList.push('请选择速率') }
+          } else if (businessType === BUSINESS_TYPE_L2TP_L) {
+            // 3/4G/NB/5G => 我要定制 => VPDN => 专线L2TP
+            if (circuitCode === '') { submitAPNErrorList.push('请填写电路代号') }
+            if (VLANNum === '') { submitAPNErrorList.push('请填写VLAN号') }
+            // 指定LNS地址 相关
+            if (activeLNSAddress === '') { submitAPNErrorList.push('请选择是否指定LNS地址') }
+            if (activeLNSAddress === CONST_YES &&
+              apnLnsAddress === '') { submitAPNErrorList.push('请填写LNS地址') }
+            if (broadbandSpeed === '') { submitAPNErrorList.push('请选择速率') }
+          }
+        }
+        setData({
+          submitAPNErrorList
+        })
+        return submitAPNErrorList.length === 0
+      },
+      // 判断是否有值
+      isValue(val) {
+        return val !== '' && val !== null && val !== undefined
+      },
+			// 判断 是否为NB类型
+			isNB() {
+				return this.connectionType === CONNECTION_TYPE_NB
+			},
+      // 判断 是否为3/4G或者5G
+      is345G() {
+        return this.connectionType === CONNECTION_TYPE_34G || this.connectionType === CONNECTION_TYPE_5G
+      },
+      // 设置 Customization value值
+      setCustomizationValue(key, value) {
+        this.customization[key] = value
+        if (key === 'activePCRF' && value === '是') {
+          $('#uploadButtonElTip').hide()
+        }
+      },
+      // 设置 activeAPNConfig.attrVoList value值
+      setApnAttrValue(key, value) {
+        const self = this
+        self.activeAPNConfig.attrVoList.map(item => {
+            if (item.attrCode === key) {
+              item.attrValue = value
+            }
+            return item
+        })
+      },
+      // 设置 form value值
+      setData(obj) {
+        Object.keys(obj).map(key => {
+          form[key] = obj[key]
+        })
+      },
+      // 展示 editModal 前 赋值
+      changeAPNConfig(config) {
+        console.log('config', config)
+        form.$nextTick(function(){
+          form.setData({
+            'activeAPNConfig': config
+          })
+          form.initCustomization()
+        });
+      },
+      // 数据格式化 initCustomization
+      initCustomization() {
+        this.customization = {
+          orderId: this.orderInfo.orderId,
+          goodsInstanceId: this.activeGoodsInstanceId,
+          attrGrpInstanceId: this.activeAPNConfig.attrGrpInstanceId,
+          gaeOrderId: this.orderInfo.gaeOrderId,
+          APNType: this.getCustomization('apn_type'),
+          businessType: this.getCustomization('apn_sub_type'),
+          APNName: this.getCustomization('apn_name'),
+          activeStandByConnective: this.getCustomization('master_slave_access'),
+          IP: this.getCustomization('apn_ip_address'),
+          URL: this.getCustomization('apn_url'),
+          activePCRF: this.getCustomization('apn_use_pcrf'),
+          publicNetIp: this.getCustomization('cust_public_ip'),
+          backupPublicNetIp: this.getCustomization('cust_slave_public_ip'),
+          activeSelfBuiltDNS: this.getCustomization('cust_self_DNS'),
+          masterDNSService: this.getCustomization('master_DNS_service'),
+          slaverDNSService: this.getCustomization('slaver_DNS_service'),
+          activeTerminalPool: this.getCustomization('specify_terminal_address_pool'),
+          terminalPoolMain: this.getCustomization('master_terminal_address_pool'),
+          terminalPoolBackup: this.getCustomization('slaver_terminal_address_pool'),
+          terminalNum: this.getCustomization('estimated_user_num'),
+          currentDomain: this.getCustomization('share_apn_domain'),
+          reuseAPNDomain: this.getCustomization('reuse_apn_domain'),
+          activeLNSAddress: this.getCustomization('apn_appoint_lns_address'),
+          apnLnsAddress: this.getCustomization('apn_lns_address'),
+          activeFixedIP: this.getCustomization('terminal_enable_fixed_ip'),
+          circuitCode: this.getCustomization('apn_circuit_code'),
+          VLANNum: this.getCustomization('apn_vlan_num'),
+          broadbandSpeed: this.getCustomization('rate'),
+          remark: this.getCustomization('apn_remarks'),
+          // NB字段
+          activeTime: this.getCustomization('active_time'), // ACTIVE TIME
+          tau: this.getCustomization('tau'), // TAU(定时器)
+          pagingCycle: this.getCustomization('paging_cycle'), // eDRX寻呼周期
+          pagingWindow: this.getCustomization('paging_window'), // eDRX寻呼窗口
+          // 5G字段
+          apnUpf: this.getCustomization('apn_upf'), // UPF N4
+          apnTac: this.getCustomization('apn_tac'), // TAC
+        }
+      },
+      getValue(goods, attrCode) {
+        let good = goods.attrVoList.filter(x => x.attrCode === attrCode)
+        if (!good || good.length === 0) return ''
+        return good[0].attrValueName || good[0].attrValue || ''
+      },
+      getAttrValue(attrVoList, attrCode) {
+        if (!attrVoList || attrVoList.length === 0) return ''
+        let attr = attrVoList.filter(x => x.attrCode === attrCode)
+        if (!attr || attr.length === 0) return ''
+        return attr[0].attrValue || ''
+      },
+      getAttrGroup(goods, attrGroupCode) {
+        return goods.attrGrpVoList.filter(x => x.attrGrpCode === attrGroupCode) || []
+      },
+      getCustomization(attrCode) {
+        return this.getAttrValue(this.activeAPNConfig.attrVoList, attrCode)
+      },
+      APNConfig(goods) {
+        return this.getAttrGroup(goods, 'apn_config')
+      },
+      communicationPlanConfig(goods) {
+        return this.getAttrGroup(goods, 'communication_plan')
+      },
+      tariffPlanConfig(goods) {
+        return this.getAttrGroup(goods, 'tariff_plan')
+      },
+      supplementTariffPlanConfig(goods) {
+        return this.getAttrGroup(goods, 'package_plan')
+      },
+      testPackageConfig(goods) {
+        return this.getAttrGroup(goods, 'test_package')
+      },
+      independentPayConfig(goods) {
+        return this.getAttrGroup(goods, 'separate_pay')
+      },
+      refreshCustomization() {
+        switch (this.customization.APNType) {
+          case APN_TYPE_INTERNET:
+            this.customization.businessType = APN_TYPE_INTERNET[0]
+            break
+          case APN_TYPE_VPDN:
+            this.customization.businessType = APN_TYPE_VPDN[0]
+            break
+          case APN_TYPE_MEC:
+            this.customization.businessType = APN_TYPE_INTERNET[0]
+            break
+        }
+      },
+      getGoodsInstanceId(goods) {
+        this.activeGoodsInstanceId = goods.goodsInstanceId
+      },
+      // 上传按钮旁的 popper 显示
+      uploadButtonElTipShow() {
+        $('#uploadButtonElTip').show()
+      },
+      // 上传按钮旁的 popper 显示
+      uploadButtonElTipHide() {
+        $('#uploadButtonElTip').hide()
+      },
+      // 确认 提交 APN编辑
+      doSubmitEdit() {
+        const self = this
+        if (this.submitAPNValidate()) {
+          self.saveAPNConfig()
+          setTimeout(() => {
+            $("#closeAPNModalEditButton").click();
+          }, 333)
+        } else {
+          layer.msg('表单填写有误', {icon: 7});
+        }
+      },
+      // 保存APN config
+      saveAPNConfig() {
+        const self = this
+        $.ajax({
+          url: base + '/order/updateAPNConfig',
+          type: "POST",
+          data: self.customization,
+          error: function () {
+            layer.msg("网络连接出错", {icon: 5, time: 1000});
+          },
+          dataType: "json",
+          success: function (data) {
+            if (data && data.ok) {
+              layer.msg(data.msg, {icon: 1, time: 1000});
+            } else {
+              layer.msg(data.msg, {icon: 7, time: 2000});
+            }
+          }
+        })
+      },
+      // 删除 PCRF 文件
+      removePcrfFile() {
+        form.$set(form.pcrfFile, 'fileName', '')
+      },
+      // 取消 APN编辑 关闭 modal
+      doCancelEdit() {
+        $("#APNModalEdit .close").click();
+      },
+      // 获取文件列表
+      getAttachlist() {
+        const self = this
+        $.post("${base}/apporder/attachlist", {
+          currentStep: this.currentStep,
+          orderId: this.orderInfo.orderId,
+          batchNo: this.currentBatch !== '' ? this.currentBatch.batchNo : null
+        }, function (data) {
+          if (data.ok === true) {
+            const length = data.data.length
+            form.pcrfFile = data.data;
+          }
+        }, "JSON");
+      },
+      // 初始化 上传 attachList
+      formatUploadButtonEl() {
+        const self = this
+        layui.use('upload', function () {
+          const upload = layui.upload;
+          //执行实例
+          const uploadInst = upload.render({
+            elem: '#uploadButtonEl', //绑定元素
+            accept: "file",
+            url: '${base}/partsProcess/upload', //上传接口
+            data: {
+              currentStep: self.currentStep,
+              orderId: self.orderInfo.orderId,
+              batchNo: self.currentBatch.batchNo ? this.currentBatch.batchNo : null
+            },
+            choose: function(obj){
+              form.uploadChoose(obj)
+            },
+            before: function(obj){ // obj参数包含的信息，跟 choose回调完全一致，可参见上文。
+              self.uploadBefore(obj)
+            },
+            done: function (res) {
+              self.uploadDone(res)
+            },
+            error: function () {
+              self.uploadError()
+            }
+          });
+        });
+      },
+      // 选择文件阶段 choose 回调 校验文件
+      uploadChoose(obj) {
+        //将每次选择的文件追加到文件队列
+        const files = obj.pushFile();
+        //预读本地文件，如果是多文件，则会遍历。(不支持ie8/9)
+        obj.preview(function(index, file, result){
+          // 只能上传doc/docx文件，且不超过10M
+          console.log(file); //得到文件对象
+          form.$set(form.pcrfFile, 'fileName', file.name)
+          //obj.resetFile(index, file, '123.jpg'); //重命名文件名，layui 2.3.0 开始新增
+          //这里还可以做一些 append 文件列表 DOM 的操作
+          //obj.upload(index, file); //对上传失败的单个文件重新上传，一般在某个事件中使用
+          //delete files[index]; //删除列表中对应的文件，一般在某个事件中使用
+        });
+      },
+      // 上传前阶段 before 回调
+      uploadBefore() {
+        layer.load();
+      },
+      // 上传完毕阶段 done 回调
+      uploadDone(res) {
+        layer.closeAll('loading');
+        if (res.result =='上传成功!'){
+          self.getAttachlist()
+        }else{
+          layer.msg(res.result);
+        }
+      },
+      // 上传报错时 error 回调
+      uploadError() {
+        //请求异常回调
+        layer.closeAll('loading');
+        layer.msg("上传失败");
+      }
+    }
+  });
+
+  $(function () {
+    $(".dropdown-toggle").dropdown('toggle');
+  });
+</script>
+<%}%>
